@@ -1,0 +1,54 @@
+int Counter = 0; 	//Global Variable
+bool Obstacle = false;	//Global Variable
+
+/*
+	Topics involved: 
+	/stm32_input      <-- Subscribed to this topic
+	/vision60_toSTM32 <-- Published to this topic
+	
+	
+	Description:
+	
+	If Vision60 received forward command from STM32 and the state of xVelocity is less than 1,
+	it will increase the Counter variable by 1. 
+	If the Counter variable is equal to 5, then Estop variable will be set to true and will publish "stop" to topic "/vision60_toSTM32".
+	It will then stay in the while loop as the condition for the while loop is statisfied. Inside the while loop,
+	it will publish "forward" to topic "/stm32_input" then an if statement will check if the state of xVelocity is more than 1,
+	if the condtion is statisfied then Estop variable will be set to false and Count variable will be set to 0.
+*/
+if(Mode == 180 || Estop == true)
+{
+	Publish "EStop" to topic {/vision60_toSTM32}
+}
+else
+{
+	if({/stm32_input} is "forward" && xVelocity < 1)
+	{
+		Count = Count + 1;
+		
+		if(Count == 5)
+		{
+			Obstacle = true;
+			Publish "Stop" to topic {/vision60_toSTM32}
+				while(Obstacle == true)
+				{
+					Publish "forward" to topic {/stm32_input}
+					if(xVelocity >= 1)
+					{	
+						Obstacle = false;
+						Count = 0;
+						Publish "continue" to topic {/stm32_input}
+					}
+					else
+					{
+						Publish "Stop" to topic {/vision60_toSTM32}
+					}
+				}
+		}
+	}
+	else
+	{
+		Count = 0;
+		Estop = false;
+	}
+}
